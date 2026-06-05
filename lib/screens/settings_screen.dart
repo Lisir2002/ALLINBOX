@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import '../models/theme_model.dart';
+import '../services/theme_service.dart';
+import 'theme_store/theme_store_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final ThemeMode currentThemeMode;
   final Function(ThemeMode) onThemeChanged;
+  final ThemePackage currentTheme;
+  final Function(ThemePackage) onThemeSelected;
 
   const SettingsScreen({
     super.key,
     required this.currentThemeMode,
     required this.onThemeChanged,
+    required this.currentTheme,
+    required this.onThemeSelected,
   });
 
   String _getThemeModeName(ThemeMode mode) {
@@ -43,7 +50,8 @@ class SettingsScreen extends StatelessWidget {
         children: [
           // 外观设置
           _buildSectionHeader(context, '外观设置'),
-          _buildThemeTile(context),
+          _buildThemeModeTile(context),
+          _buildThemeStoreTile(context),
 
           const Divider(indent: 16, endIndent: 16),
 
@@ -97,33 +105,53 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildThemeTile(BuildContext context) {
+  Widget _buildThemeModeTile(BuildContext context) {
     return ListTile(
       leading: _buildIconContainer(_getThemeModeIcon(currentThemeMode), Colors.purple),
       title: const Text('主题模式'),
       subtitle: Text(_getThemeModeName(currentThemeMode)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showThemeDialog(context),
+      onTap: () => _showThemeModeDialog(context),
     );
   }
 
-  void _showThemeDialog(BuildContext context) {
+  Widget _buildThemeStoreTile(BuildContext context) {
+    return ListTile(
+      leading: _buildIconContainer(Icons.palette_outlined, Colors.indigo),
+      title: const Text('主题商店'),
+      subtitle: Text('当前: ${currentTheme.name}'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ThemeStoreScreen(
+              onThemeSelected: onThemeSelected,
+              currentThemeId: currentTheme.id,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showThemeModeDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return SimpleDialog(
-          title: const Text('选择主题'),
+          title: const Text('选择主题模式'),
           children: [
-            _buildThemeOption(dialogContext, ThemeMode.system, '跟随系统', Icons.brightness_auto),
-            _buildThemeOption(dialogContext, ThemeMode.light, '日间模式', Icons.light_mode),
-            _buildThemeOption(dialogContext, ThemeMode.dark, '夜间模式', Icons.dark_mode),
+            _buildThemeModeOption(dialogContext, ThemeMode.system, '跟随系统', Icons.brightness_auto),
+            _buildThemeModeOption(dialogContext, ThemeMode.light, '日间模式', Icons.light_mode),
+            _buildThemeModeOption(dialogContext, ThemeMode.dark, '夜间模式', Icons.dark_mode),
           ],
         );
       },
     );
   }
 
-  Widget _buildThemeOption(BuildContext dialogContext, ThemeMode mode, String title, IconData icon) {
+  Widget _buildThemeModeOption(BuildContext dialogContext, ThemeMode mode, String title, IconData icon) {
     return SimpleDialogOption(
       onPressed: () {
         onThemeChanged(mode);
