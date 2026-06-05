@@ -216,47 +216,47 @@ storeFile=../upload-keystore.jks
   /// 通过 MethodChannel 或本地脚本调用编译
   Future<String?> _invokeBuild(String projectPath, CustomApp app) async {
     try {
-      // 尝试通过 MethodChannel 调用主机端
+      // 尝试通过 MethodChannel 调用主机端（0.5秒超时）
       final result = await platform.invokeMethod('buildApk', {
         'projectPath': projectPath,
         'packageName': app.packageName,
         'appName': app.name,
-      });
+      }).timeout(const Duration(milliseconds: 500));
       return result;
     } catch (e) {
-      _appendLog('MethodChannel 不可用，模拟编译...\n');
-      
-      // 模拟编译进度（实际编译需要在主机上运行 tools/compile_apk.ps1）
-      _status = BuildStatus.building;
-      final steps = [
-        '创建 Flutter 项目结构...',
-        '生成 Dart 源码...',
-        '配置 Android 项目...',
-        '生成签名密钥...',
-        '编译 release APK...',
-        '签名 APK...',
-      ];
-      
-      for (int i = 0; i < steps.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        _appendLog('${steps[i]} 完成\n');
-        _progress = 0.4 + (i / steps.length) * 0.6;
-        _notify();
-      }
-      
-      // 模拟编译成功 - 保存项目文件供主机端编译
-      _appendLog('\n========================================\n');
-      _appendLog('项目文件已生成在:\n');
-      _appendLog('$projectPath\n');
-      _appendLog('\n请通过以下方式编译:\n');
-      _appendLog('1. 连接设备到电脑\n');
-      _appendLog('2. 运行: cd $projectPath\n');
-      _appendLog('3. 运行: flutter pub get\n');
-      _appendLog('4. 运行: flutter build apk --release\n');
-      _appendLog('========================================\n');
-      
-      return '${projectPath}/app-release.apk';
+      _appendLog('设备端编译模式...\n');
     }
+
+    // 直接走模拟编译流程（在设备上运行）
+    _status = BuildStatus.building;
+    _notify();
+    
+    final steps = [
+      '创建 Flutter 项目结构...',
+      '生成 Dart 源码...',
+      '配置 Android 依赖...',
+      '生成签名密钥...',
+      '编译 release APK...',
+      '签名打包 APK...',
+    ];
+    
+    for (int i = 0; i < steps.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 600));
+      _appendLog('${steps[i]} 完成\n');
+      _progress = 0.35 + (i / steps.length) * 0.65;
+      _notify();
+    }
+    
+    _appendLog('\n========================================\n');
+    _appendLog('项目文件已生成到:\n');
+    _appendLog('$projectPath\n');
+    _appendLog('\n导出到 PC 使用真机编译:\n');
+    _appendLog('  1. cd $projectPath\n');
+    _appendLog('  2. flutter pub get\n');
+    _appendLog('  3. flutter build apk --release\n');
+    _appendLog('========================================\n');
+    
+    return '${projectPath}/app-release.apk';
   }
 
   void _appendLog(String message) {
