@@ -10,17 +10,10 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
-  Locale _locale = const Locale('zh', 'CN');
 
   void _changeThemeMode(ThemeMode mode) {
     setState(() {
       _themeMode = mode;
-    });
-  }
-
-  void _changeLocale(Locale locale) {
-    setState(() {
-      _locale = locale;
     });
   }
 
@@ -29,8 +22,6 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'ALL IN BOX',
       debugShowCheckedModeBanner: false,
-      
-      // 主题配置
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFF6C5CE7),
         useMaterial3: true,
@@ -50,20 +41,9 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       themeMode: _themeMode,
-
-      // 语言配置
-      locale: _locale,
-      supportedLocales: const [
-        Locale('zh', 'CN'),
-        Locale('zh', 'TW'),
-        Locale('en'),
-      ],
-
       home: HomeScreen(
         currentThemeMode: _themeMode,
         onThemeChanged: _changeThemeMode,
-        currentLocale: _locale,
-        onLocaleChanged: _changeLocale,
       ),
     );
   }
