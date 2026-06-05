@@ -112,10 +112,11 @@ class ThemeService {
   ];
 
   // 在线主题仓库地址
-  // 使用多个镜像源，提高可用性（优先使用官网）
+  // 优先使用 Gitee（国内访问快），备选 GitHub
   static const List<String> _baseUrls = [
-    'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',  // 官网
-    'https://raw.gitmirror.com/Lisir2002/ALLINBOX/main/themes',  // 国内镜像1
+    'https://gitee.com/ecoji/allinbox/raw/main/themes',  // Gitee（主力）
+    'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',  // GitHub 备选
+    'https://raw.gitmirror.com/Lisir2002/ALLINBOX/main/themes',  // 镜像
     'https://ghproxy.com/https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',  // 代理
   ];
   

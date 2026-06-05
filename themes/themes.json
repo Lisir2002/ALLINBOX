@@ -5,7 +5,7 @@
     "description": "温暖的日落橙色风格主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/sunset.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/sunset.json",
     "previewUrl": "",
     "colors": {
       "primary": "#E17055",
@@ -26,7 +26,7 @@
     "description": "深邃神秘的午夜蓝主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/midnight.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/midnight.json",
     "previewUrl": "",
     "colors": {
       "primary": "#6C5CE7",
@@ -47,7 +47,7 @@
     "description": "浪漫粉色樱花风格主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/cherry_blossom.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/cherry_blossom.json",
     "previewUrl": "",
     "colors": {
       "primary": "#FD79A8",
@@ -68,7 +68,7 @@
     "description": "清新薄荷绿色主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/mint.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/mint.json",
     "previewUrl": "",
     "colors": {
       "primary": "#00CEC9",
@@ -89,7 +89,7 @@
     "description": "高贵典雅的皇家紫色主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/royal.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/royal.json",
     "previewUrl": "",
     "colors": {
       "primary": "#8E44AD",
@@ -110,7 +110,7 @@
     "description": "适合视力障碍用户的高对比度主题",
     "author": "ALL IN BOX",
     "version": "1.0.0",
-    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes/high_contrast.json",
+    "downloadUrl": "https://gitee.com/ecoji/allinbox/raw/main/themes/high_contrast.json",
     "previewUrl": "",
     "colors": {
       "primary": "#000000",
