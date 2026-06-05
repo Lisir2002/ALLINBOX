@@ -4,15 +4,11 @@ import 'placeholder_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final ThemeMode currentThemeMode;
-  final Function(ThemeMode) onThemeChanged;
   final ThemePackage currentTheme;
   final Function(ThemePackage) onThemeSelected;
 
   const HomeScreen({
     super.key,
-    required this.currentThemeMode,
-    required this.onThemeChanged,
     required this.currentTheme,
     required this.onThemeSelected,
   });
@@ -107,8 +103,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     context,
                     MaterialPageRoute(
                       builder: (context) => SettingsScreen(
-                        currentThemeMode: widget.currentThemeMode,
-                        onThemeChanged: widget.onThemeChanged,
                         currentTheme: widget.currentTheme,
                         onThemeSelected: widget.onThemeSelected,
                       ),

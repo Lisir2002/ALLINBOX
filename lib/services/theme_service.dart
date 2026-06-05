@@ -16,7 +16,7 @@ class ThemeService {
     ThemePackage(
       id: 'default',
       name: '默认主题',
-      description: 'ALL IN BOX 默认主题',
+      description: 'ALL IN BOX 默认浅色主题',
       author: '系统',
       version: '1.0.0',
       downloadUrl: '',
@@ -32,6 +32,31 @@ class ThemeService {
         onBackground: '#000000',
         onSurface: '#000000',
         onError: '#FFFFFF',
+        brightness: Brightness.light,
+      ),
+      isInstalled: true,
+      isBuiltIn: true,
+    ),
+    ThemePackage(
+      id: 'dark_default',
+      name: '暗夜主题',
+      description: 'ALL IN BOX 默认深色主题',
+      author: '系统',
+      version: '1.0.0',
+      downloadUrl: '',
+      previewUrl: '',
+      colors: ThemeColors(
+        primary: '#A29BFE',
+        secondary: '#55EFC4',
+        background: '#121212',
+        surface: '#1E1E1E',
+        error: '#FF7675',
+        onPrimary: '#000000',
+        onSecondary: '#000000',
+        onBackground: '#FFFFFF',
+        onSurface: '#FFFFFF',
+        onError: '#000000',
+        brightness: Brightness.dark,
       ),
       isInstalled: true,
       isBuiltIn: true,
@@ -55,6 +80,7 @@ class ThemeService {
         onBackground: '#2D3436',
         onSurface: '#2D3436',
         onError: '#FFFFFF',
+        brightness: Brightness.light,
       ),
       isInstalled: true,
       isBuiltIn: true,
@@ -78,6 +104,7 @@ class ThemeService {
         onBackground: '#2D3436',
         onSurface: '#2D3436',
         onError: '#FFFFFF',
+        brightness: Brightness.light,
       ),
       isInstalled: true,
       isBuiltIn: true,
@@ -133,8 +160,9 @@ class ThemeService {
   }
 
   /// 根据主题包生成 ThemeData
-  ThemeData getThemeData(ThemePackage themePackage, {bool isDark = false}) {
+  ThemeData getThemeData(ThemePackage themePackage) {
     final colors = themePackage.colors;
+    final isDark = colors.brightness == Brightness.dark;
     
     if (isDark) {
       return ThemeData(
@@ -143,12 +171,12 @@ class ThemeService {
         colorScheme: ColorScheme.dark(
           primary: Color(colors.primaryColor),
           secondary: Color(colors.secondaryColor),
-          surface: const Color(0xFF1E1E1E),
+          surface: Color(colors.surfaceColor),
           error: Color(colors.errorColor),
-          onPrimary: Color(int.parse(colors.onPrimary.replaceAll('#', '0xFF'))),
-          onSecondary: Color(int.parse(colors.onSecondary.replaceAll('#', '0xFF'))),
-          onSurface: Colors.white,
-          onError: Color(int.parse(colors.onError.replaceAll('#', '0xFF'))),
+          onPrimary: Color(colors.onPrimaryColor),
+          onSecondary: Color(colors.onSecondaryColor),
+          onSurface: Color(colors.onSurfaceColor),
+          onError: Color(colors.onErrorColor),
         ),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
@@ -165,11 +193,11 @@ class ThemeService {
         secondary: Color(colors.secondaryColor),
         surface: Color(colors.surfaceColor),
         error: Color(colors.errorColor),
-        onPrimary: Color(int.parse(colors.onPrimary.replaceAll('#', '0xFF'))),
-        onSecondary: Color(int.parse(colors.onSecondary.replaceAll('#', '0xFF'))),
-        onBackground: Color(int.parse(colors.onBackground.replaceAll('#', '0xFF'))),
-        onSurface: Color(int.parse(colors.onSurface.replaceAll('#', '0xFF'))),
-        onError: Color(int.parse(colors.onError.replaceAll('#', '0xFF'))),
+        onPrimary: Color(colors.onPrimaryColor),
+        onSecondary: Color(colors.onSecondaryColor),
+        onBackground: Color(colors.onBackgroundColor),
+        onSurface: Color(colors.onSurfaceColor),
+        onError: Color(colors.onErrorColor),
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,

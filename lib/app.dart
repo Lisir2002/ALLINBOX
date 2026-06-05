@@ -12,7 +12,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final ThemeService _themeService = ThemeService();
-  ThemeMode _themeMode = ThemeMode.system;
   ThemePackage? _currentTheme;
   bool _isInitialized = false;
 
@@ -27,12 +26,6 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _currentTheme = _themeService.getCurrentTheme();
       _isInitialized = true;
-    });
-  }
-
-  void _changeThemeMode(ThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
     });
   }
 
@@ -52,11 +45,7 @@ class _MyAppState extends State<MyApp> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.all_inclusive,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                Icon(Icons.all_inclusive, size: 64, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(height: 16),
                 const Text('ALL IN BOX'),
                 const SizedBox(height: 16),
@@ -68,18 +57,13 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    final lightTheme = _themeService.getThemeData(_currentTheme!, isDark: false);
-    final darkTheme = _themeService.getThemeData(_currentTheme!, isDark: true);
+    final themeData = _themeService.getThemeData(_currentTheme!);
 
     return MaterialApp(
       title: 'ALL IN BOX',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: _themeMode,
+      theme: themeData,
       home: HomeScreen(
-        currentThemeMode: _themeMode,
-        onThemeChanged: _changeThemeMode,
         currentTheme: _currentTheme!,
         onThemeSelected: _changeTheme,
       ),

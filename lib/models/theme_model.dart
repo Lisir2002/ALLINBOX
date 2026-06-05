@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 /// 主题包模型
 class ThemePackage {
@@ -84,6 +85,7 @@ class ThemeColors {
   final String onBackground;
   final String onSurface;
   final String onError;
+  final Brightness brightness;
 
   ThemeColors({
     required this.primary,
@@ -96,6 +98,7 @@ class ThemeColors {
     required this.onBackground,
     required this.onSurface,
     required this.onError,
+    this.brightness = Brightness.light,
   });
 
   factory ThemeColors.fromJson(Map<String, dynamic> json) {
@@ -110,6 +113,7 @@ class ThemeColors {
       onBackground: json['onBackground'] ?? '#000000',
       onSurface: json['onSurface'] ?? '#000000',
       onError: json['onError'] ?? '#FFFFFF',
+      brightness: json['brightness'] == 'dark' ? Brightness.dark : Brightness.light,
     );
   }
 
@@ -125,6 +129,7 @@ class ThemeColors {
       'onBackground': onBackground,
       'onSurface': onSurface,
       'onError': onError,
+      'brightness': brightness == Brightness.dark ? 'dark' : 'light',
     };
   }
 
@@ -140,7 +145,12 @@ class ThemeColors {
   /// 获取主色调的 Color 对象
   int get primaryColor => _hexToColor(primary);
   int get secondaryColor => _hexToColor(secondary);
-  int get backgroundColor => _hexToColor(background);
+  int get backgroundColorValue => _hexToColor(background);
   int get surfaceColor => _hexToColor(surface);
   int get errorColor => _hexToColor(error);
+  int get onPrimaryColor => _hexToColor(onPrimary);
+  int get onSecondaryColor => _hexToColor(onSecondary);
+  int get onBackgroundColor => _hexToColor(onBackground);
+  int get onSurfaceColor => _hexToColor(onSurface);
+  int get onErrorColor => _hexToColor(onError);
 }
