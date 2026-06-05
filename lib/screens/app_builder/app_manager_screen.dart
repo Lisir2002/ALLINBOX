@@ -150,13 +150,12 @@ class _AppManagerScreenState extends State<AppManagerScreen> {
       },
     );
 
-    // 启动编译
-    final projectDir = await _appService.createProjectFiles(app);
-    final success = await _buildEngine.buildApk(app, projectDir);
+    // 启动编译（模板注入法，直接在手机端生成APK）
+    final success = await _buildEngine.buildApk(app);
 
     if (mounted) {
       if (success) {
-        await _appService.markAsBuilt(app.id, '${projectDir.path}/app-release.apk');
+        await _appService.markAsBuilt(app.id, '');
         _loadApps();
       }
     }
