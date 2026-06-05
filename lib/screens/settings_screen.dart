@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'dart:convert';
+import 'storage_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final ThemeMode currentThemeMode;
@@ -24,118 +22,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late ThemeMode _themeMode;
   late Locale _locale;
-  String _cacheSize = '计算中...';
-  List<CacheItem> _cacheItems = [];
 
   @override
   void initState() {
     super.initState();
     _themeMode = widget.currentThemeMode;
     _locale = widget.currentLocale;
-    _calculateCacheSize();
-  }
-
-  Future<void> _calculateCacheSize() async {
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final appDir = await getApplicationDocumentsDirectory();
-
-      int tempSize = await _getDirectorySize(tempDir);
-      int appSize = await _getDirectorySize(appDir);
-
-      setState(() {
-        _cacheItems = [
-          CacheItem(
-            name: '临时缓存',
-            path: tempDir.path,
-            size: tempSize,
-            icon: Icons.folder_outlined,
-            color: Colors.orange,
-          ),
-          CacheItem(
-            name: '应用数据',
-            path: appDir.path,
-            size: appSize,
-            icon: Icons.storage_outlined,
-            color: Colors.blue,
-          ),
-        ];
-        _cacheSize = _formatSize(tempSize + appSize);
-      });
-    } catch (e) {
-      setState(() {
-        _cacheSize = '计算失败';
-      });
-    }
-  }
-
-  Future<int> _getDirectorySize(Directory dir) async {
-    int size = 0;
-    try {
-      if (await dir.exists()) {
-        await for (FileSystemEntity entity in dir.list(recursive: true, followLinks: false)) {
-          if (entity is File) {
-            size += await entity.length();
-          }
-        }
-      }
-    } catch (e) {
-      // 忽略权限错误
-    }
-    return size;
-  }
-
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  Future<void> _clearCache(CacheItem item) async {
-    try {
-      final dir = Directory(item.path);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
-        await dir.create(recursive: true);
-      }
-      await _calculateCacheSize();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${item.name}已清理')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('清理失败: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _clearAllCache() async {
-    try {
-      for (var item in _cacheItems) {
-        final dir = Directory(item.path);
-        if (await dir.exists()) {
-          await dir.delete(recursive: true);
-          await dir.create(recursive: true);
-        }
-      }
-      await _calculateCacheSize();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('所有缓存已清理')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('清理失败: $e')),
-        );
-      }
-    }
   }
 
   String _getThemeModeName(ThemeMode mode) {
@@ -146,6 +38,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return '日间模式';
       case ThemeMode.dark:
         return '夜间模式';
+    }
+  }
+
+  IconData _getThemeModeIcon(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return Icons.brightness_auto;
+      case ThemeMode.light:
+        return Icons.light_mode;
+      case ThemeMode.dark:
+        return Icons.dark_mode;
     }
   }
 
@@ -162,26 +65,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
+        centerTitle: true,
       ),
       body: ListView(
         children: [
-          // 主题设置
+          // 外观设置
           _buildSectionHeader(context, '外观设置'),
           _buildThemeTile(context),
           _buildLanguageTile(context),
 
-          const Divider(height: 32),
+          const SizedBox(height: 8),
+          const Divider(indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
 
-          // 缓存设置
+          // 存储管理
           _buildSectionHeader(context, '存储管理'),
-          _buildCacheOverview(context),
-          ..._cacheItems.map((item) => _buildCacheItemTile(context, item)),
-          _buildClearAllButton(context),
+          _buildStorageTile(context),
 
-          const Divider(height: 32),
+          const SizedBox(height: 8),
+          const Divider(indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
 
           // 关于
           _buildSectionHeader(context, '关于'),
@@ -212,12 +120,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: Colors.purple.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.palette_outlined, color: Colors.purple),
+        child: Icon(
+          _getThemeModeIcon(_themeMode),
+          color: Colors.purple,
+        ),
       ),
       title: const Text('主题模式'),
       subtitle: Text(_getThemeModeName(_themeMode)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showThemeDialog(context),
+      onTap: () => _showThemeDialog(),
     );
   }
 
@@ -234,86 +145,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('语言'),
       subtitle: Text(_getLanguageName(_locale)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showLanguageDialog(context),
+      onTap: () => _showLanguageDialog(),
     );
   }
 
-  Widget _buildCacheOverview(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.storage_outlined, color: Colors.orange, size: 32),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '总缓存大小',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _cacheSize,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCacheItemTile(BuildContext context, CacheItem item) {
+  Widget _buildStorageTile(BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: item.color.withOpacity(0.1),
+          color: Colors.orange.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(item.icon, color: item.color),
+        child: const Icon(Icons.storage_outlined, color: Colors.orange),
       ),
-      title: Text(item.name),
-      subtitle: Text(
-        _formatSize(item.size),
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      trailing: TextButton(
-        onPressed: () => _showClearCacheDialog(context, item),
-        child: const Text('清理'),
-      ),
-    );
-  }
-
-  Widget _buildClearAllButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: OutlinedButton.icon(
-        onPressed: () => _showClearAllCacheDialog(context),
-        icon: const Icon(Icons.delete_sweep_outlined),
-        label: const Text('清理所有缓存'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.red,
-          side: const BorderSide(color: Colors.red),
-        ),
-      ),
+      title: const Text('存储管理'),
+      subtitle: const Text('查看和清理应用缓存'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const StorageScreen(),
+          ),
+        );
+      },
     );
   }
 
@@ -330,11 +186,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('关于 ALL IN BOX'),
       subtitle: const Text('版本 1.0.0'),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showAboutDialog(context),
+      onTap: () => _showAboutDialog(),
     );
   }
 
-  void _showThemeDialog(BuildContext context) {
+  void _showThemeDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -343,9 +199,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildThemeOption(context, ThemeMode.system, '跟随系统', Icons.brightness_auto),
-              _buildThemeOption(context, ThemeMode.light, '日间模式', Icons.light_mode),
-              _buildThemeOption(context, ThemeMode.dark, '夜间模式', Icons.dark_mode),
+              _buildThemeOption(ThemeMode.system, '跟随系统', Icons.brightness_auto),
+              _buildThemeOption(ThemeMode.light, '日间模式', Icons.light_mode),
+              _buildThemeOption(ThemeMode.dark, '夜间模式', Icons.dark_mode),
             ],
           ),
         );
@@ -353,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeOption(BuildContext context, ThemeMode mode, String title, IconData icon) {
+  Widget _buildThemeOption(ThemeMode mode, String title, IconData icon) {
     return RadioListTile<ThemeMode>(
       title: Row(
         children: [
@@ -374,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLanguageDialog(BuildContext context) {
+  void _showLanguageDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -383,9 +239,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildLanguageOption(context, const Locale('zh', 'CN'), '简体中文'),
-              _buildLanguageOption(context, const Locale('zh', 'TW'), '繁體中文'),
-              _buildLanguageOption(context, const Locale('en'), 'English'),
+              _buildLanguageOption(const Locale('zh', 'CN'), '简体中文'),
+              _buildLanguageOption(const Locale('zh', 'TW'), '繁體中文'),
+              _buildLanguageOption(const Locale('en'), 'English'),
             ],
           ),
         );
@@ -393,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(BuildContext context, Locale locale, String title) {
+  Widget _buildLanguageOption(Locale locale, String title) {
     return RadioListTile<Locale>(
       title: Text(title),
       value: locale,
@@ -408,59 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showClearCacheDialog(BuildContext context, CacheItem item) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('清理${item.name}'),
-          content: Text('确定要清理${item.name}吗？\n当前大小: ${_formatSize(item.size)}'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _clearCache(item);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('清理'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showClearAllCacheDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('清理所有缓存'),
-          content: Text('确定要清理所有缓存吗？\n当前总大小: $_cacheSize'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _clearAllCache();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('清理'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
+  void _showAboutDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -468,35 +272,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: const Text('关于 ALL IN BOX'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.all_inclusive,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.all_inclusive,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
               const SizedBox(height: 16),
-              const Center(
-                child: Text(
-                  'ALL IN BOX',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+              const Text(
+                'ALL IN BOX',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const Center(child: Text('v1.0.0')),
+              const SizedBox(height: 4),
+              const Text('v1.0.0'),
               const SizedBox(height: 16),
-              const Text('综合工具箱应用'),
+              const Text(
+                '综合工具箱应用',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
               Text(
                 '包名: com.inbox.all',
@@ -514,20 +317,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-}
-
-class CacheItem {
-  final String name;
-  final String path;
-  final int size;
-  final IconData icon;
-  final Color color;
-
-  CacheItem({
-    required this.name,
-    required this.path,
-    required this.size,
-    required this.icon,
-    required this.color,
-  });
 }
