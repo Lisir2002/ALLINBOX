@@ -7,7 +7,19 @@ class PermissionService {
   factory PermissionService() => _instance;
   PermissionService._internal();
 
+  // 权限检查状态缓存
+  bool _hasCheckedNetworkPermission = false;
+  bool _hasNetworkPermission = false;
+  bool _hasCheckedStoragePermission = false;
+  bool _hasStoragePermission = false;
+
   /// 检查网络权限（Android 默认授予）
+  bool get hasNetworkPermission => _hasNetworkPermission;
+
+  /// 检查存储权限
+  bool get hasStoragePermission => _hasStoragePermission;
+
+  /// 检查网络权限
   Future<bool> checkNetworkPermission() async {
     // Android 上网络权限默认授予，只需要在 AndroidManifest.xml 中声明
     return true;
@@ -17,18 +29,27 @@ class PermissionService {
   Future<bool> checkStoragePermission() async {
     // Android 13+ 使用新的权限模型
     if (await Permission.manageExternalStorage.status.isGranted) {
+      _hasStoragePermission = true;
       return true;
     }
     if (await Permission.storage.status.isGranted) {
+      _hasStoragePermission = true;
       return true;
     }
+    _hasStoragePermission = false;
     return false;
   }
 
   /// 请求存储权限
   Future<bool> requestStoragePermission(BuildContext context) async {
+    // 如果已经检查过且有权限，直接返回
+    if (_hasCheckedStoragePermission && _hasStoragePermission) {
+      return true;
+    }
+
     // 先检查是否已有权限
     if (await checkStoragePermission()) {
+      _hasCheckedStoragePermission = true;
       return true;
     }
 
@@ -43,6 +64,7 @@ class PermissionService {
       );
 
       if (!shouldRequest) {
+        _hasCheckedStoragePermission = true;
         return false;
       }
     }
@@ -51,31 +73,27 @@ class PermissionService {
     Map<Permission, PermissionStatus> statuses;
 
     // Android 11+ 需要 MANAGE_EXTERNAL_STORAGE
-    if (await _isAndroid11OrAbove()) {
-      statuses = await [Permission.manageExternalStorage].request();
-      if (statuses[Permission.manageExternalStorage]!.isGranted) {
-        return true;
-      }
-    } else {
-      // Android 10 及以下使用普通存储权限
-      statuses = await [Permission.storage].request();
-      if (statuses[Permission.storage]!.isGranted) {
-        return true;
-      }
+    statuses = await [Permission.manageExternalStorage].request();
+    if (statuses[Permission.manageExternalStorage]!.isGranted) {
+      _hasStoragePermission = true;
+      _hasCheckedStoragePermission = true;
+      return true;
+    }
+
+    // 尝试普通存储权限
+    statuses = await [Permission.storage].request();
+    if (statuses[Permission.storage]!.isGranted) {
+      _hasStoragePermission = true;
+      _hasCheckedStoragePermission = true;
+      return true;
     }
 
     // 权限被拒绝
+    _hasCheckedStoragePermission = true;
     if (context.mounted) {
       _showPermissionDeniedDialog(context);
     }
     return false;
-  }
-
-  /// 检查是否是 Android 11+
-  Future<bool> _isAndroid11OrAbove() async {
-    // permission_handler 没有直接获取 Android 版本的方法
-    // 我们尝试请求 manageExternalStorage，如果失败则使用普通权限
-    return true; // 默认假设是 Android 11+
   }
 
   /// 显示权限说明对话框
@@ -137,41 +155,18 @@ class PermissionService {
     await openAppSettings();
   }
 
-  /// 显示网络权限说明对话框
-  Future<bool> showNetworkPermissionDialog(BuildContext context) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.wifi, color: Colors.blue, size: 48),
-        title: const Text('需要网络权限'),
-        content: const Text(
-          '此功能需要访问网络来下载在线主题。\n\n'
-          '请确保您的设备已连接到互联网。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
-  /// 检查并请求网络权限
+  /// 请求网络权限
   Future<bool> requestNetworkPermission(BuildContext context) async {
-    // Android 上网络权限默认授予
-    // 只需要显示说明对话框
-    if (context.mounted) {
-      final granted = await showNetworkPermissionDialog(context);
-      return granted;
+    // 如果已经检查过且有权限，直接返回
+    if (_hasCheckedNetworkPermission && _hasNetworkPermission) {
+      return true;
     }
-    return false;
+
+    // Android 上网络权限默认授予
+    // 只需要在 AndroidManifest.xml 中声明
+    _hasNetworkPermission = true;
+    _hasCheckedNetworkPermission = true;
+    return true;
   }
 
   /// 显示权限被拒绝的提示
@@ -187,5 +182,13 @@ class PermissionService {
         ),
       ),
     );
+  }
+
+  /// 重置权限检查状态（用于测试）
+  void resetPermissionState() {
+    _hasCheckedNetworkPermission = false;
+    _hasNetworkPermission = false;
+    _hasCheckedStoragePermission = false;
+    _hasStoragePermission = false;
   }
 }
