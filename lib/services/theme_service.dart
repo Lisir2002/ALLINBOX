@@ -85,11 +85,11 @@ class ThemeService {
   ];
 
   // 在线主题仓库地址
-  // 使用多个镜像源，提高可用性
+  // 使用多个镜像源，提高可用性（优先使用官网）
   static const List<String> _baseUrls = [
-    'https://raw.gitmirror.com/Lisir2002/ALLINBOX/main/themes',
-    'https://ghproxy.com/https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',
-    'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',
+    'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',  // 官网
+    'https://raw.gitmirror.com/Lisir2002/ALLINBOX/main/themes',  // 国内镜像1
+    'https://ghproxy.com/https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',  // 代理
   ];
   
   // 当前使用的 baseUrl 索引
@@ -240,22 +240,34 @@ class ThemeService {
   /// 下载并安装主题
   Future<bool> installTheme(ThemePackage theme) async {
     try {
-      debugPrint('下载主题: ${theme.name} (${theme.downloadUrl})');
+      debugPrint('下载主题: ${theme.name}');
+      debugPrint('下载URL: ${theme.downloadUrl}');
       
-      // 从 downloadUrl 提取相对路径
-      final uri = Uri.parse(theme.downloadUrl);
-      final pathSegments = uri.pathSegments;
+      // 从 downloadUrl 提取相对路径（主题文件名）
       String relativePath = '';
-      if (pathSegments.length >= 2) {
-        relativePath = pathSegments.sublist(pathSegments.length - 2).join('/');
-      } else {
-        relativePath = pathSegments.last;
+      try {
+        final uri = Uri.parse(theme.downloadUrl);
+        final pathSegments = uri.pathSegments;
+        debugPrint('路径段: $pathSegments');
+        if (pathSegments.isNotEmpty) {
+          // 获取最后一个路径段（文件名）
+          relativePath = pathSegments.last;
+        }
+      } catch (e) {
+        debugPrint('解析URL失败: $e');
+        // 如果URL解析失败，尝试直接使用主题ID
+        relativePath = '${theme.id}.json';
       }
+      
+      debugPrint('相对路径: $relativePath');
       
       // 使用镜像源下载
       final response = await _fetchFromMirrors(relativePath);
       
       if (response != null) {
+        debugPrint('下载成功，响应长度: ${response.body.length}');
+        debugPrint('响应内容: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
+        
         final themeData = json.decode(response.body);
         final installedTheme = ThemePackage.fromJson(themeData);
         
@@ -270,8 +282,9 @@ class ThemeService {
       } else {
         debugPrint('所有镜像源都失败');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('安装主题失败: $e');
+      debugPrint('堆栈: $stackTrace');
     }
     return false;
   }

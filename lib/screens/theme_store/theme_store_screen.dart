@@ -24,6 +24,7 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   bool _isLoading = true;
   String _selectedCategory = '全部';
   bool _hasNetworkPermission = false;
+  bool _hasCheckedPermission = false;
 
   @override
   void initState() {
@@ -32,8 +33,15 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   }
 
   Future<void> _checkNetworkAndLoadThemes() async {
+    // 如果已经检查过权限，直接加载
+    if (_hasCheckedPermission && _hasNetworkPermission) {
+      await _loadThemes();
+      return;
+    }
+
     // 检查网络权限
     _hasNetworkPermission = await _permissionService.requestNetworkPermission(context);
+    _hasCheckedPermission = true;
     
     if (_hasNetworkPermission) {
       await _loadThemes();
