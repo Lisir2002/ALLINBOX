@@ -56,14 +56,14 @@ class ThemePackage {
     };
   }
 
-  ThemePackage copyWith({bool? isInstalled}) {
+  ThemePackage copyWith({bool? isInstalled, String? downloadUrl}) {
     return ThemePackage(
       id: id,
       name: name,
       description: description,
       author: author,
       version: version,
-      downloadUrl: downloadUrl,
+      downloadUrl: downloadUrl ?? this.downloadUrl,
       previewUrl: previewUrl,
       colors: colors,
       isInstalled: isInstalled ?? this.isInstalled,

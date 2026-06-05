@@ -84,8 +84,10 @@ class ThemeService {
     ),
   ];
 
-  // 在线主题仓库地址（示例）
-  static const String _themeRepositoryUrl = 'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes';
+  // 在线主题仓库地址（使用 CDN 代理加速访问）
+  static const String _baseUrl = 'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes';
+  static const String _proxyUrl = 'https://ghproxy.com/'; // GitHub CDN 代理
+  static const bool _useProxy = true; // 是否使用代理
 
   List<ThemePackage> _installedThemes = [];
   String _currentThemeId = 'default';
@@ -170,16 +172,52 @@ class ThemeService {
     );
   }
 
+  /// 获取代理后的 URL
+  String _getProxiedUrl(String url) {
+    if (_useProxy) {
+      return '$_proxyUrl$url';
+    }
+    return url;
+  }
+
   /// 从在线仓库获取可用主题列表
   Future<List<ThemePackage>> fetchAvailableThemes() async {
     try {
-      final response = await http.get(Uri.parse('$_themeRepositoryUrl/themes.json'));
+      final url = _getProxiedUrl('$_baseUrl/themes.json');
+      debugPrint('获取主题列表: $url');
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+      );
+      debugPrint('响应状态: ${response.statusCode}');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => ThemePackage.fromJson(json)).toList();
+        // 更新下载链接为代理链接
+        return data.map((json) {
+          final theme = ThemePackage.fromJson(json);
+          if (_useProxy && theme.downloadUrl.isNotEmpty) {
+            return theme.copyWith(
+              downloadUrl: _getProxiedUrl(theme.downloadUrl),
+            );
+          }
+          return theme;
+        }).toList();
       }
     } catch (e) {
       debugPrint('获取在线主题失败: $e');
+      // 尝试不使用代理
+      if (_useProxy) {
+        try {
+          final response = await http.get(Uri.parse('$_baseUrl/themes.json')).timeout(
+            const Duration(seconds: 10),
+          );
+          if (response.statusCode == 200) {
+            final List<dynamic> data = json.decode(response.body);
+            return data.map((json) => ThemePackage.fromJson(json)).toList();
+          }
+        } catch (e2) {
+          debugPrint('不使用代理也失败: $e2');
+        }
+      }
     }
     return [];
   }
@@ -187,8 +225,22 @@ class ThemeService {
   /// 下载并安装主题
   Future<bool> installTheme(ThemePackage theme) async {
     try {
-      // 下载主题配置文件
-      final response = await http.get(Uri.parse(theme.downloadUrl));
+      // 尝试使用代理下载
+      final proxiedUrl = _getProxiedUrl(theme.downloadUrl);
+      debugPrint('下载主题: $proxiedUrl');
+      
+      http.Response response;
+      try {
+        response = await http.get(Uri.parse(proxiedUrl)).timeout(
+          const Duration(seconds: 15),
+        );
+      } catch (e) {
+        debugPrint('代理下载失败，尝试直接下载: $e');
+        response = await http.get(Uri.parse(theme.downloadUrl)).timeout(
+          const Duration(seconds: 15),
+        );
+      }
+      
       if (response.statusCode == 200) {
         final themeData = json.decode(response.body);
         final installedTheme = ThemePackage.fromJson(themeData);
@@ -199,7 +251,10 @@ class ThemeService {
         // 添加到已安装列表
         _installedThemes.add(installedTheme.copyWith(isInstalled: true));
         
+        debugPrint('主题安装成功: ${theme.name}');
         return true;
+      } else {
+        debugPrint('下载失败，状态码: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('安装主题失败: $e');
