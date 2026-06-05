@@ -63,10 +63,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _changeTheme(ThemeMode mode) {
+    setState(() {
+      _themeMode = mode;
+    });
+    widget.onThemeChanged(mode);
+  }
+
+  void _changeLanguage(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+    widget.onLocaleChanged(locale);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
@@ -75,31 +87,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           // 外观设置
-          _buildSectionHeader(context, '外观设置'),
-          _buildThemeTile(context),
-          _buildLanguageTile(context),
+          _buildSectionHeader('外观设置'),
+          _buildThemeTile(),
+          _buildLanguageTile(),
 
           const SizedBox(height: 8),
           const Divider(indent: 16, endIndent: 16),
           const SizedBox(height: 8),
 
           // 存储管理
-          _buildSectionHeader(context, '存储管理'),
-          _buildStorageTile(context),
+          _buildSectionHeader('存储管理'),
+          _buildStorageTile(),
 
           const SizedBox(height: 8),
           const Divider(indent: 16, endIndent: 16),
           const SizedBox(height: 8),
 
           // 关于
-          _buildSectionHeader(context, '关于'),
-          _buildAboutTile(context),
+          _buildSectionHeader('关于'),
+          _buildAboutTile(),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
@@ -112,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeTile(BuildContext context) {
+  Widget _buildThemeTile() {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -128,11 +140,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('主题模式'),
       subtitle: Text(_getThemeModeName(_themeMode)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showThemeDialog(),
+      onTap: _showThemeDialog,
     );
   }
 
-  Widget _buildLanguageTile(BuildContext context) {
+  Widget _buildLanguageTile() {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -145,11 +157,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('语言'),
       subtitle: Text(_getLanguageName(_locale)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showLanguageDialog(),
+      onTap: _showLanguageDialog,
     );
   }
 
-  Widget _buildStorageTile(BuildContext context) {
+  Widget _buildStorageTile() {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -165,15 +177,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const StorageScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const StorageScreen()),
         );
       },
     );
   }
 
-  Widget _buildAboutTile(BuildContext context) {
+  Widget _buildAboutTile() {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -186,46 +196,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('关于 ALL IN BOX'),
       subtitle: const Text('版本 1.0.0'),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showAboutDialog(),
+      onTap: _showAboutDialog,
     );
   }
 
   void _showThemeDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('选择主题'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildThemeOption(ThemeMode.system, '跟随系统', Icons.brightness_auto),
-              _buildThemeOption(ThemeMode.light, '日间模式', Icons.light_mode),
-              _buildThemeOption(ThemeMode.dark, '夜间模式', Icons.dark_mode),
+              RadioListTile<ThemeMode>(
+                title: const Row(
+                  children: [
+                    Icon(Icons.brightness_auto, size: 20),
+                    SizedBox(width: 8),
+                    Text('跟随系统'),
+                  ],
+                ),
+                value: ThemeMode.system,
+                groupValue: _themeMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeTheme(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Row(
+                  children: [
+                    Icon(Icons.light_mode, size: 20),
+                    SizedBox(width: 8),
+                    Text('日间模式'),
+                  ],
+                ),
+                value: ThemeMode.light,
+                groupValue: _themeMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeTheme(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Row(
+                  children: [
+                    Icon(Icons.dark_mode, size: 20),
+                    SizedBox(width: 8),
+                    Text('夜间模式'),
+                  ],
+                ),
+                value: ThemeMode.dark,
+                groupValue: _themeMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeTheme(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
             ],
           ),
         );
-      },
-    );
-  }
-
-  Widget _buildThemeOption(ThemeMode mode, String title, IconData icon) {
-    return RadioListTile<ThemeMode>(
-      title: Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-          Text(title),
-        ],
-      ),
-      value: mode,
-      groupValue: _themeMode,
-      onChanged: (value) {
-        if (value != null) {
-          setState(() => _themeMode = value);
-          widget.onThemeChanged(value);
-          Navigator.pop(context);
-        }
       },
     );
   }
@@ -233,15 +270,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showLanguageDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('选择语言'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildLanguageOption(const Locale('zh', 'CN'), '简体中文'),
-              _buildLanguageOption(const Locale('zh', 'TW'), '繁體中文'),
-              _buildLanguageOption(const Locale('en'), 'English'),
+              RadioListTile<Locale>(
+                title: const Text('简体中文'),
+                value: const Locale('zh', 'CN'),
+                groupValue: _locale,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeLanguage(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
+              RadioListTile<Locale>(
+                title: const Text('繁體中文'),
+                value: const Locale('zh', 'TW'),
+                groupValue: _locale,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeLanguage(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
+              RadioListTile<Locale>(
+                title: const Text('English'),
+                value: const Locale('en'),
+                groupValue: _locale,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeLanguage(value);
+                    Navigator.pop(dialogContext);
+                  }
+                },
+              ),
             ],
           ),
         );
@@ -249,25 +316,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(Locale locale, String title) {
-    return RadioListTile<Locale>(
-      title: Text(title),
-      value: locale,
-      groupValue: _locale,
-      onChanged: (value) {
-        if (value != null) {
-          setState(() => _locale = value);
-          widget.onLocaleChanged(value);
-          Navigator.pop(context);
-        }
-      },
-    );
-  }
-
   void _showAboutDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('关于 ALL IN BOX'),
           content: Column(
@@ -288,18 +340,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 16),
               const Text(
                 'ALL IN BOX',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               const Text('v1.0.0'),
               const SizedBox(height: 16),
-              const Text(
-                '综合工具箱应用',
-                textAlign: TextAlign.center,
-              ),
+              const Text('综合工具箱应用', textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Text(
                 '包名: com.inbox.all',
@@ -309,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('确定'),
             ),
           ],
