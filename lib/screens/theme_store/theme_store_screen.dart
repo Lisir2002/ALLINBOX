@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/theme_model.dart';
 import '../../services/theme_service.dart';
+import '../../services/permission_service.dart';
 
 class ThemeStoreScreen extends StatefulWidget {
   final Function(ThemePackage) onThemeSelected;
@@ -18,14 +19,27 @@ class ThemeStoreScreen extends StatefulWidget {
 
 class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   final ThemeService _themeService = ThemeService();
+  final PermissionService _permissionService = PermissionService();
   List<ThemePackage> _themes = [];
   bool _isLoading = true;
   String _selectedCategory = '全部';
+  bool _hasNetworkPermission = false;
 
   @override
   void initState() {
     super.initState();
-    _loadThemes();
+    _checkNetworkAndLoadThemes();
+  }
+
+  Future<void> _checkNetworkAndLoadThemes() async {
+    // 检查网络权限
+    _hasNetworkPermission = await _permissionService.requestNetworkPermission(context);
+    
+    if (_hasNetworkPermission) {
+      await _loadThemes();
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _loadThemes() async {
@@ -36,15 +50,17 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     debugPrint('内置主题数量: ${_themes.length}');
     
     // 尝试获取在线主题
-    try {
-      final onlineThemes = await _themeService.fetchAvailableThemes();
-      debugPrint('在线主题数量: ${onlineThemes.length}');
-      for (var theme in onlineThemes) {
-        debugPrint('在线主题: ${theme.name} (${theme.id})');
+    if (_hasNetworkPermission) {
+      try {
+        final onlineThemes = await _themeService.fetchAvailableThemes();
+        debugPrint('在线主题数量: ${onlineThemes.length}');
+        for (var theme in onlineThemes) {
+          debugPrint('在线主题: ${theme.name} (${theme.id})');
+        }
+        _themes.addAll(onlineThemes);
+      } catch (e) {
+        debugPrint('获取在线主题失败: $e');
       }
-      _themes.addAll(onlineThemes);
-    } catch (e) {
-      debugPrint('获取在线主题失败: $e');
     }
     
     debugPrint('总主题数量: ${_themes.length}');
@@ -62,23 +78,74 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadThemes,
+            onPressed: _checkNetworkAndLoadThemes,
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // 分类标签
-                _buildCategoryTabs(),
-                
-                // 主题列表
-                Expanded(
-                  child: _buildThemeList(),
+          : !_hasNetworkPermission
+              ? _buildNoNetworkView()
+              : Column(
+                  children: [
+                    // 分类标签
+                    _buildCategoryTabs(),
+                    
+                    // 主题列表
+                    Expanded(
+                      child: _buildThemeList(),
+                    ),
+                  ],
                 ),
-              ],
+    );
+  }
+
+  Widget _buildNoNetworkView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
             ),
+            const SizedBox(height: 24),
+            Text(
+              '无法访问网络',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '在线主题需要网络权限才能加载。\n请检查网络连接后重试。',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: _checkNetworkAndLoadThemes,
+              icon: const Icon(Icons.refresh),
+              label: const Text('重试'),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  _hasNetworkPermission = false;
+                  _themes = _themeService.getBuiltInThemes();
+                });
+              },
+              child: const Text('使用内置主题'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -320,19 +387,32 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   }
 
   Future<void> _downloadTheme(ThemePackage theme) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('正在下载主题...'),
-          ],
+    // 再次检查网络权限
+    if (!_hasNetworkPermission) {
+      _hasNetworkPermission = await _permissionService.requestNetworkPermission(context);
+      if (!_hasNetworkPermission) {
+        if (mounted) {
+          _permissionService.showPermissionDeniedSnackBar(context, '网络');
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('正在下载主题...'),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
 
     final success = await _themeService.installTheme(theme);
     

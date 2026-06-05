@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/theme_model.dart';
 import '../services/theme_service.dart';
 import 'theme_store/theme_store_screen.dart';
+import 'storage_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final ThemeMode currentThemeMode;
@@ -62,7 +63,12 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('存储管理'),
             subtitle: const Text('查看和清理应用缓存'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const StorageScreen()),
+              );
+            },
           ),
 
           const Divider(indent: 16, endIndent: 16),
