@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/theme_model.dart';
 import 'theme_store/theme_store_screen.dart';
 import 'storage_screen.dart';
+import 'permission_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final ThemePackage currentTheme;
@@ -25,6 +26,23 @@ class SettingsScreen extends StatelessWidget {
           // 外观设置
           _buildSectionHeader(context, '外观设置'),
           _buildThemeStoreTile(context),
+
+          const Divider(indent: 16, endIndent: 16),
+
+          // 权限管理
+          _buildSectionHeader(context, '权限管理'),
+          ListTile(
+            leading: _buildIconContainer(Icons.security, Colors.indigo),
+            title: const Text('权限管理'),
+            subtitle: const Text('管理系统权限授权状态'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PermissionScreen()),
+              );
+            },
+          ),
 
           const Divider(indent: 16, endIndent: 16),
 
