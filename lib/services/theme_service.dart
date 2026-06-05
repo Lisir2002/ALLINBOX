@@ -84,17 +84,16 @@ class ThemeService {
     ),
   ];
 
-  // 在线主题仓库地址（使用 refs/heads/main 格式）
-  static const String _baseUrl = 'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes';
-  
-  // 多个 CDN 代理选项（按优先级排序）
-  static const List<String> _proxyUrls = [
-    'https://ghproxy.com/',
-    'https://ghproxy.net/',
-    'https://mirror.ghproxy.com/',
-    'https://gh-proxy.com/',
-    '',  // 直连（无代理）
+  // 在线主题仓库地址
+  // 使用多个镜像源，提高可用性
+  static const List<String> _baseUrls = [
+    'https://raw.gitmirror.com/Lisir2002/ALLINBOX/main/themes',
+    'https://ghproxy.com/https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',
+    'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes',
   ];
+  
+  // 当前使用的 baseUrl 索引
+  static int _currentBaseUrlIndex = 0;
 
   List<ThemePackage> _installedThemes = [];
   String _currentThemeId = 'default';
@@ -179,17 +178,20 @@ class ThemeService {
     );
   }
 
-  /// 尝试使用多个代理获取资源
-  Future<http.Response?> _fetchWithProxies(String url) async {
-    for (final proxy in _proxyUrls) {
+  /// 尝试使用多个镜像源获取资源
+  Future<http.Response?> _fetchFromMirrors(String path) async {
+    // 从当前索引开始尝试，然后循环尝试其他源
+    for (int i = 0; i < _baseUrls.length; i++) {
+      final index = (_currentBaseUrlIndex + i) % _baseUrls.length;
+      final url = '${_baseUrls[index]}/$path';
       try {
-        final proxiedUrl = proxy.isEmpty ? url : '$proxy$url';
-        debugPrint('尝试获取: $proxiedUrl');
-        final response = await http.get(Uri.parse(proxiedUrl)).timeout(
-          const Duration(seconds: 8),
+        debugPrint('尝试获取: $url');
+        final response = await http.get(Uri.parse(url)).timeout(
+          const Duration(seconds: 10),
         );
         if (response.statusCode == 200) {
-          debugPrint('成功: $proxiedUrl');
+          debugPrint('成功: $url');
+          _currentBaseUrlIndex = index; // 记住成功的源
           return response;
         }
       } catch (e) {
@@ -200,26 +202,31 @@ class ThemeService {
     return null;
   }
 
-  /// 获取可用的代理 URL 前缀
-  String _getWorkingProxyPrefix() {
-    // 默认返回第一个代理
-    return _proxyUrls.first;
+  /// 获取当前可用的镜像源前缀
+  String _getCurrentMirrorPrefix() {
+    return _baseUrls[_currentBaseUrlIndex];
   }
 
   /// 从在线仓库获取可用主题列表
   Future<List<ThemePackage>> fetchAvailableThemes() async {
     try {
-      final response = await _fetchWithProxies('$_baseUrl/themes.json');
+      final response = await _fetchFromMirrors('themes.json');
       if (response != null) {
         final List<dynamic> data = json.decode(response.body);
-        final proxyPrefix = _getWorkingProxyPrefix();
-        // 更新下载链接为代理链接
+        final mirrorPrefix = _getCurrentMirrorPrefix();
+        // 更新下载链接为镜像源链接
         return data.map((json) {
           final theme = ThemePackage.fromJson(json);
-          if (proxyPrefix.isNotEmpty && theme.downloadUrl.isNotEmpty) {
-            return theme.copyWith(
-              downloadUrl: '$proxyPrefix${theme.downloadUrl}',
-            );
+          if (theme.downloadUrl.isNotEmpty) {
+            // 提取相对路径
+            final uri = Uri.parse(theme.downloadUrl);
+            final pathSegments = uri.pathSegments;
+            if (pathSegments.length >= 2) {
+              final relativePath = pathSegments.sublist(pathSegments.length - 2).join('/');
+              return theme.copyWith(
+                downloadUrl: '$mirrorPrefix/$relativePath',
+              );
+            }
           }
           return theme;
         }).toList();
@@ -235,8 +242,18 @@ class ThemeService {
     try {
       debugPrint('下载主题: ${theme.name} (${theme.downloadUrl})');
       
-      // 使用多代理下载
-      final response = await _fetchWithProxies(theme.downloadUrl);
+      // 从 downloadUrl 提取相对路径
+      final uri = Uri.parse(theme.downloadUrl);
+      final pathSegments = uri.pathSegments;
+      String relativePath = '';
+      if (pathSegments.length >= 2) {
+        relativePath = pathSegments.sublist(pathSegments.length - 2).join('/');
+      } else {
+        relativePath = pathSegments.last;
+      }
+      
+      // 使用镜像源下载
+      final response = await _fetchFromMirrors(relativePath);
       
       if (response != null) {
         final themeData = json.decode(response.body);
@@ -251,7 +268,7 @@ class ThemeService {
         debugPrint('主题安装成功: ${theme.name}');
         return true;
       } else {
-        debugPrint('所有下载方式都失败');
+        debugPrint('所有镜像源都失败');
       }
     } catch (e) {
       debugPrint('安装主题失败: $e');
