@@ -44,15 +44,20 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   Future<void> _loadThemes() async {
     setState(() => _isLoading = true);
     
-    // 获取所有主题
+    // 获取所有主题（包含内置和已安装的外部主题）
     _themes = _themeService.getAllThemes();
-    debugPrint('内置主题数量: ${_themes.length}');
+    debugPrint('内置+已安装主题数量: ${_themes.length}');
     
-    // 尝试获取在线主题
+    // 获取已安装主题的 ID 集合
+    final installedIds = _themes.map((t) => t.id).toSet();
+    
+    // 尝试获取在线主题，过滤掉已安装的
     try {
       final onlineThemes = await _themeService.fetchAvailableThemes();
       debugPrint('在线主题数量: ${onlineThemes.length}');
-      _themes.addAll(onlineThemes);
+      // 只添加未安装的在线主题
+      final newOnlineThemes = onlineThemes.where((t) => !installedIds.contains(t.id)).toList();
+      _themes.addAll(newOnlineThemes);
     } catch (e) {
       debugPrint('获取在线主题失败: $e');
     }
