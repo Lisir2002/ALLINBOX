@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'storage_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   final ThemeMode currentThemeMode;
   final Function(ThemeMode) onThemeChanged;
   final Locale currentLocale;
@@ -14,21 +14,6 @@ class SettingsScreen extends StatefulWidget {
     required this.currentLocale,
     required this.onLocaleChanged,
   });
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  late ThemeMode _themeMode;
-  late Locale _locale;
-
-  @override
-  void initState() {
-    super.initState();
-    _themeMode = widget.currentThemeMode;
-    _locale = widget.currentLocale;
-  }
 
   String _getThemeModeName(ThemeMode mode) {
     switch (mode) {
@@ -63,20 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _changeTheme(ThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
-    });
-    widget.onThemeChanged(mode);
-  }
-
-  void _changeLanguage(Locale locale) {
-    setState(() {
-      _locale = locale;
-    });
-    widget.onLocaleChanged(locale);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,31 +58,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           // 外观设置
-          _buildSectionHeader('外观设置'),
-          _buildThemeTile(),
-          _buildLanguageTile(),
+          _buildSectionHeader(context, '外观设置'),
+          _buildThemeTile(context),
+          _buildLanguageTile(context),
 
           const SizedBox(height: 8),
           const Divider(indent: 16, endIndent: 16),
           const SizedBox(height: 8),
 
           // 存储管理
-          _buildSectionHeader('存储管理'),
-          _buildStorageTile(),
+          _buildSectionHeader(context, '存储管理'),
+          _buildStorageTile(context),
 
           const SizedBox(height: 8),
           const Divider(indent: 16, endIndent: 16),
           const SizedBox(height: 8),
 
           // 关于
-          _buildSectionHeader('关于'),
-          _buildAboutTile(),
+          _buildSectionHeader(context, '关于'),
+          _buildAboutTile(context),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
@@ -124,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeTile() {
+  Widget _buildThemeTile(BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -133,18 +104,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          _getThemeModeIcon(_themeMode),
+          _getThemeModeIcon(currentThemeMode),
           color: Colors.purple,
         ),
       ),
       title: const Text('主题模式'),
-      subtitle: Text(_getThemeModeName(_themeMode)),
+      subtitle: Text(_getThemeModeName(currentThemeMode)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: _showThemeDialog,
+      onTap: () => _showThemeDialog(context),
     );
   }
 
-  Widget _buildLanguageTile() {
+  Widget _buildLanguageTile(BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -155,13 +126,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: const Icon(Icons.language_outlined, color: Colors.blue),
       ),
       title: const Text('语言'),
-      subtitle: Text(_getLanguageName(_locale)),
+      subtitle: Text(_getLanguageName(currentLocale)),
       trailing: const Icon(Icons.chevron_right),
-      onTap: _showLanguageDialog,
+      onTap: () => _showLanguageDialog(context),
     );
   }
 
-  Widget _buildStorageTile() {
+  Widget _buildStorageTile(BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -183,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAboutTile() {
+  Widget _buildAboutTile(BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -196,14 +167,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: const Text('关于 ALL IN BOX'),
       subtitle: const Text('版本 1.0.0'),
       trailing: const Icon(Icons.chevron_right),
-      onTap: _showAboutDialog,
+      onTap: () => _showAboutDialog(context),
     );
   }
 
-  void _showThemeDialog() {
+  void _showThemeDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('选择主题'),
           content: Column(
@@ -218,11 +189,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 value: ThemeMode.system,
-                groupValue: _themeMode,
-                onChanged: (value) {
+                groupValue: currentThemeMode,
+                onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    _changeTheme(value);
-                    Navigator.pop(dialogContext);
+                    onThemeChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
@@ -235,11 +206,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 value: ThemeMode.light,
-                groupValue: _themeMode,
-                onChanged: (value) {
+                groupValue: currentThemeMode,
+                onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    _changeTheme(value);
-                    Navigator.pop(dialogContext);
+                    onThemeChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
@@ -252,11 +223,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 value: ThemeMode.dark,
-                groupValue: _themeMode,
-                onChanged: (value) {
+                groupValue: currentThemeMode,
+                onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    _changeTheme(value);
-                    Navigator.pop(dialogContext);
+                    onThemeChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
@@ -267,10 +238,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLanguageDialog() {
+  void _showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('选择语言'),
           content: Column(
@@ -279,33 +250,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
               RadioListTile<Locale>(
                 title: const Text('简体中文'),
                 value: const Locale('zh', 'CN'),
-                groupValue: _locale,
-                onChanged: (value) {
+                groupValue: currentLocale,
+                onChanged: (Locale? value) {
                   if (value != null) {
-                    _changeLanguage(value);
-                    Navigator.pop(dialogContext);
+                    onLocaleChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
               RadioListTile<Locale>(
                 title: const Text('繁體中文'),
                 value: const Locale('zh', 'TW'),
-                groupValue: _locale,
-                onChanged: (value) {
+                groupValue: currentLocale,
+                onChanged: (Locale? value) {
                   if (value != null) {
-                    _changeLanguage(value);
-                    Navigator.pop(dialogContext);
+                    onLocaleChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
               RadioListTile<Locale>(
                 title: const Text('English'),
                 value: const Locale('en'),
-                groupValue: _locale,
-                onChanged: (value) {
+                groupValue: currentLocale,
+                onChanged: (Locale? value) {
                   if (value != null) {
-                    _changeLanguage(value);
-                    Navigator.pop(dialogContext);
+                    onLocaleChanged(value);
+                    Navigator.of(dialogContext).pop();
                   }
                 },
               ),
@@ -316,10 +287,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showAboutDialog() {
+  void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('关于 ALL IN BOX'),
           content: Column(
@@ -355,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('确定'),
             ),
           ],

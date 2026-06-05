@@ -11,26 +11,22 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
   Locale _locale = const Locale('zh', 'CN');
-  Key _appKey = UniqueKey();
 
   void _changeThemeMode(ThemeMode mode) {
     setState(() {
       _themeMode = mode;
-      _appKey = UniqueKey();
     });
   }
 
   void _changeLocale(Locale locale) {
     setState(() {
       _locale = locale;
-      _appKey = UniqueKey();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      key: _appKey,
       title: 'ALL IN BOX',
       debugShowCheckedModeBanner: false,
       
@@ -42,7 +38,6 @@ class _MyAppState extends State<MyApp> {
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
-          scrolledUnderElevation: 1,
         ),
       ),
       darkTheme: ThemeData(
@@ -52,7 +47,6 @@ class _MyAppState extends State<MyApp> {
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
-          scrolledUnderElevation: 1,
         ),
       ),
       themeMode: _themeMode,
