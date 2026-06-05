@@ -33,15 +33,21 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     
     // 获取所有主题
     _themes = _themeService.getAllThemes();
+    debugPrint('内置主题数量: ${_themes.length}');
     
     // 尝试获取在线主题
     try {
       final onlineThemes = await _themeService.fetchAvailableThemes();
+      debugPrint('在线主题数量: ${onlineThemes.length}');
+      for (var theme in onlineThemes) {
+        debugPrint('在线主题: ${theme.name} (${theme.id})');
+      }
       _themes.addAll(onlineThemes);
     } catch (e) {
       debugPrint('获取在线主题失败: $e');
     }
     
+    debugPrint('总主题数量: ${_themes.length}');
     setState(() => _isLoading = false);
   }
 

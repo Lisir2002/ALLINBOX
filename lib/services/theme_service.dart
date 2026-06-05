@@ -84,10 +84,17 @@ class ThemeService {
     ),
   ];
 
-  // 在线主题仓库地址（使用 CDN 代理加速访问）
-  static const String _baseUrl = 'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes';
-  static const String _proxyUrl = 'https://ghproxy.com/'; // GitHub CDN 代理
-  static const bool _useProxy = true; // 是否使用代理
+  // 在线主题仓库地址（使用 refs/heads/main 格式）
+  static const String _baseUrl = 'https://raw.githubusercontent.com/Lisir2002/ALLINBOX/refs/heads/main/themes';
+  
+  // 多个 CDN 代理选项（按优先级排序）
+  static const List<String> _proxyUrls = [
+    'https://ghproxy.com/',
+    'https://ghproxy.net/',
+    'https://mirror.ghproxy.com/',
+    'https://gh-proxy.com/',
+    '',  // 直连（无代理）
+  ];
 
   List<ThemePackage> _installedThemes = [];
   String _currentThemeId = 'default';
@@ -172,31 +179,46 @@ class ThemeService {
     );
   }
 
-  /// 获取代理后的 URL
-  String _getProxiedUrl(String url) {
-    if (_useProxy) {
-      return '$_proxyUrl$url';
+  /// 尝试使用多个代理获取资源
+  Future<http.Response?> _fetchWithProxies(String url) async {
+    for (final proxy in _proxyUrls) {
+      try {
+        final proxiedUrl = proxy.isEmpty ? url : '$proxy$url';
+        debugPrint('尝试获取: $proxiedUrl');
+        final response = await http.get(Uri.parse(proxiedUrl)).timeout(
+          const Duration(seconds: 8),
+        );
+        if (response.statusCode == 200) {
+          debugPrint('成功: $proxiedUrl');
+          return response;
+        }
+      } catch (e) {
+        debugPrint('失败: $e');
+        continue;
+      }
     }
-    return url;
+    return null;
+  }
+
+  /// 获取可用的代理 URL 前缀
+  String _getWorkingProxyPrefix() {
+    // 默认返回第一个代理
+    return _proxyUrls.first;
   }
 
   /// 从在线仓库获取可用主题列表
   Future<List<ThemePackage>> fetchAvailableThemes() async {
     try {
-      final url = _getProxiedUrl('$_baseUrl/themes.json');
-      debugPrint('获取主题列表: $url');
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 10),
-      );
-      debugPrint('响应状态: ${response.statusCode}');
-      if (response.statusCode == 200) {
+      final response = await _fetchWithProxies('$_baseUrl/themes.json');
+      if (response != null) {
         final List<dynamic> data = json.decode(response.body);
+        final proxyPrefix = _getWorkingProxyPrefix();
         // 更新下载链接为代理链接
         return data.map((json) {
           final theme = ThemePackage.fromJson(json);
-          if (_useProxy && theme.downloadUrl.isNotEmpty) {
+          if (proxyPrefix.isNotEmpty && theme.downloadUrl.isNotEmpty) {
             return theme.copyWith(
-              downloadUrl: _getProxiedUrl(theme.downloadUrl),
+              downloadUrl: '$proxyPrefix${theme.downloadUrl}',
             );
           }
           return theme;
@@ -204,20 +226,6 @@ class ThemeService {
       }
     } catch (e) {
       debugPrint('获取在线主题失败: $e');
-      // 尝试不使用代理
-      if (_useProxy) {
-        try {
-          final response = await http.get(Uri.parse('$_baseUrl/themes.json')).timeout(
-            const Duration(seconds: 10),
-          );
-          if (response.statusCode == 200) {
-            final List<dynamic> data = json.decode(response.body);
-            return data.map((json) => ThemePackage.fromJson(json)).toList();
-          }
-        } catch (e2) {
-          debugPrint('不使用代理也失败: $e2');
-        }
-      }
     }
     return [];
   }
@@ -225,23 +233,12 @@ class ThemeService {
   /// 下载并安装主题
   Future<bool> installTheme(ThemePackage theme) async {
     try {
-      // 尝试使用代理下载
-      final proxiedUrl = _getProxiedUrl(theme.downloadUrl);
-      debugPrint('下载主题: $proxiedUrl');
+      debugPrint('下载主题: ${theme.name} (${theme.downloadUrl})');
       
-      http.Response response;
-      try {
-        response = await http.get(Uri.parse(proxiedUrl)).timeout(
-          const Duration(seconds: 15),
-        );
-      } catch (e) {
-        debugPrint('代理下载失败，尝试直接下载: $e');
-        response = await http.get(Uri.parse(theme.downloadUrl)).timeout(
-          const Duration(seconds: 15),
-        );
-      }
+      // 使用多代理下载
+      final response = await _fetchWithProxies(theme.downloadUrl);
       
-      if (response.statusCode == 200) {
+      if (response != null) {
         final themeData = json.decode(response.body);
         final installedTheme = ThemePackage.fromJson(themeData);
         
@@ -254,7 +251,7 @@ class ThemeService {
         debugPrint('主题安装成功: ${theme.name}');
         return true;
       } else {
-        debugPrint('下载失败，状态码: ${response.statusCode}');
+        debugPrint('所有下载方式都失败');
       }
     } catch (e) {
       debugPrint('安装主题失败: $e');
