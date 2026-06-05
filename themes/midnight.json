@@ -1,0 +1,21 @@
+{
+  "id": "midnight",
+  "name": "午夜主题",
+  "description": "深邃神秘的午夜蓝主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/midnight.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#6C5CE7",
+    "secondary": "#A29BFE",
+    "background": "#FFFFFF",
+    "surface": "#F0EFFF",
+    "error": "#FF7675",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#FFFFFF",
+    "onBackground": "#2D3436",
+    "onSurface": "#2D3436",
+    "onError": "#FFFFFF"
+  }
+}

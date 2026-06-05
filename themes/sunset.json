@@ -1,0 +1,21 @@
+{
+  "id": "sunset",
+  "name": "日落主题",
+  "description": "温暖的日落橙色风格主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/sunset.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#E17055",
+    "secondary": "#FDCB6E",
+    "background": "#FFFFFF",
+    "surface": "#FFF5F0",
+    "error": "#D63031",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#2D3436",
+    "onBackground": "#2D3436",
+    "onSurface": "#2D3436",
+    "onError": "#FFFFFF"
+  }
+}

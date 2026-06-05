@@ -1,0 +1,21 @@
+{
+  "id": "royal",
+  "name": "皇家主题",
+  "description": "高贵典雅的皇家紫色主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/royal.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#8E44AD",
+    "secondary": "#C39BD3",
+    "background": "#FFFFFF",
+    "surface": "#F5F0FF",
+    "error": "#C0392B",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#FFFFFF",
+    "onBackground": "#2C3E50",
+    "onSurface": "#2C3E50",
+    "onError": "#FFFFFF"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "cherry_blossom",
+  "name": "樱花主题",
+  "description": "浪漫粉色樱花风格主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/cherry_blossom.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#FD79A8",
+    "secondary": "#FAB1D4",
+    "background": "#FFFFFF",
+    "surface": "#FFF0F5",
+    "error": "#E84393",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#2D3436",
+    "onBackground": "#2D3436",
+    "onSurface": "#2D3436",
+    "onError": "#FFFFFF"
+  }
+}

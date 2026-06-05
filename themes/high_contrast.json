@@ -1,0 +1,21 @@
+{
+  "id": "high_contrast",
+  "name": "高对比度主题",
+  "description": "适合视力障碍用户的高对比度主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/high_contrast.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#000000",
+    "secondary": "#333333",
+    "background": "#FFFFFF",
+    "surface": "#F0F0F0",
+    "error": "#FF0000",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#FFFFFF",
+    "onBackground": "#000000",
+    "onSurface": "#000000",
+    "onError": "#FFFFFF"
+  }
+}

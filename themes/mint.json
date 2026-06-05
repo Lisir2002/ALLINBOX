@@ -1,0 +1,21 @@
+{
+  "id": "mint",
+  "name": "薄荷主题",
+  "description": "清新薄荷绿色主题",
+  "author": "ALL IN BOX",
+  "version": "1.0.0",
+  "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/mint.json",
+  "previewUrl": "",
+  "colors": {
+    "primary": "#00CEC9",
+    "secondary": "#81ECEC",
+    "background": "#FFFFFF",
+    "surface": "#F0FFFF",
+    "error": "#D63031",
+    "onPrimary": "#FFFFFF",
+    "onSecondary": "#2D3436",
+    "onBackground": "#2D3436",
+    "onSurface": "#2D3436",
+    "onError": "#FFFFFF"
+  }
+}

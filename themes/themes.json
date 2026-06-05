@@ -1,0 +1,128 @@
+[
+  {
+    "id": "sunset",
+    "name": "日落主题",
+    "description": "温暖的日落橙色风格主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/sunset.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#E17055",
+      "secondary": "#FDCB6E",
+      "background": "#FFFFFF",
+      "surface": "#FFF5F0",
+      "error": "#D63031",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#2D3436",
+      "onBackground": "#2D3436",
+      "onSurface": "#2D3436",
+      "onError": "#FFFFFF"
+    }
+  },
+  {
+    "id": "midnight",
+    "name": "午夜主题",
+    "description": "深邃神秘的午夜蓝主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/midnight.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#6C5CE7",
+      "secondary": "#A29BFE",
+      "background": "#FFFFFF",
+      "surface": "#F0EFFF",
+      "error": "#FF7675",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#FFFFFF",
+      "onBackground": "#2D3436",
+      "onSurface": "#2D3436",
+      "onError": "#FFFFFF"
+    }
+  },
+  {
+    "id": "cherry_blossom",
+    "name": "樱花主题",
+    "description": "浪漫粉色樱花风格主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/cherry_blossom.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#FD79A8",
+      "secondary": "#FAB1D4",
+      "background": "#FFFFFF",
+      "surface": "#FFF0F5",
+      "error": "#E84393",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#2D3436",
+      "onBackground": "#2D3436",
+      "onSurface": "#2D3436",
+      "onError": "#FFFFFF"
+    }
+  },
+  {
+    "id": "mint",
+    "name": "薄荷主题",
+    "description": "清新薄荷绿色主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/mint.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#00CEC9",
+      "secondary": "#81ECEC",
+      "background": "#FFFFFF",
+      "surface": "#F0FFFF",
+      "error": "#D63031",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#2D3436",
+      "onBackground": "#2D3436",
+      "onSurface": "#2D3436",
+      "onError": "#FFFFFF"
+    }
+  },
+  {
+    "id": "royal",
+    "name": "皇家主题",
+    "description": "高贵典雅的皇家紫色主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/royal.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#8E44AD",
+      "secondary": "#C39BD3",
+      "background": "#FFFFFF",
+      "surface": "#F5F0FF",
+      "error": "#C0392B",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#FFFFFF",
+      "onBackground": "#2C3E50",
+      "onSurface": "#2C3E50",
+      "onError": "#FFFFFF"
+    }
+  },
+  {
+    "id": "high_contrast",
+    "name": "高对比度主题",
+    "description": "适合视力障碍用户的高对比度主题",
+    "author": "ALL IN BOX",
+    "version": "1.0.0",
+    "downloadUrl": "https://raw.githubusercontent.com/Lisir2002/ALLINBOX/main/themes/high_contrast.json",
+    "previewUrl": "",
+    "colors": {
+      "primary": "#000000",
+      "secondary": "#333333",
+      "background": "#FFFFFF",
+      "surface": "#F0F0F0",
+      "error": "#FF0000",
+      "onPrimary": "#FFFFFF",
+      "onSecondary": "#FFFFFF",
+      "onBackground": "#000000",
+      "onSurface": "#000000",
+      "onError": "#FFFFFF"
+    }
+  }
+]
