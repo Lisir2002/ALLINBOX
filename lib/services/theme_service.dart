@@ -413,4 +413,26 @@ class ThemeService {
       isBuiltIn: false,
     );
   }
+
+  /// 清除所有下载的主题
+  Future<void> clearAllDownloadedThemes() async {
+    try {
+      final dir = await _getThemeDirectory();
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+        await dir.create(recursive: true);
+      }
+      _installedThemes.clear();
+      
+      // 如果当前主题是下载的主题，切换到默认主题
+      final builtInIds = _builtInThemes.map((t) => t.id).toList();
+      if (!builtInIds.contains(_currentThemeId)) {
+        setCurrentTheme('default');
+      }
+      
+      debugPrint('已清除所有下载的主题');
+    } catch (e) {
+      debugPrint('清除主题失败: $e');
+    }
+  }
 }

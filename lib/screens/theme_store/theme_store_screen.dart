@@ -20,7 +20,8 @@ class ThemeStoreScreen extends StatefulWidget {
 class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   final ThemeService _themeService = ThemeService();
   final PermissionService _permissionService = PermissionService();
-  List<ThemePackage> _themes = [];
+  List<ThemePackage> _allThemes = []; // 所有主题（内置+已安装+在线）
+  List<ThemePackage> _onlineThemes = []; // 在线主题列表
   bool _isLoading = true;
   String _selectedCategory = '全部';
 
@@ -31,9 +32,7 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   }
 
   Future<void> _loadThemesWithPermissionCheck() async {
-    // 检查是否已有网络权限（如果已有则不弹窗）
     final hasPermission = await _permissionService.requestNetworkPermission(context);
-    
     if (hasPermission) {
       await _loadThemes();
     } else {
@@ -44,32 +43,44 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   Future<void> _loadThemes() async {
     setState(() => _isLoading = true);
     
-    // 获取所有主题（包含内置和已安装的外部主题）
-    _themes = _themeService.getAllThemes();
-    debugPrint('内置+已安装主题数量: ${_themes.length}');
+    // 获取所有主题（内置+已安装的外部主题）
+    final installedThemes = _themeService.getAllThemes();
+    final installedIds = installedThemes.map((t) => t.id).toSet();
     
-    // 获取已安装主题的 ID 集合
-    final installedIds = _themes.map((t) => t.id).toSet();
-    
-    // 尝试获取在线主题，过滤掉已安装的
+    // 获取在线主题
     try {
-      final onlineThemes = await _themeService.fetchAvailableThemes();
-      debugPrint('在线主题数量: ${onlineThemes.length}');
-      // 只添加未安装的在线主题
-      final newOnlineThemes = onlineThemes.where((t) => !installedIds.contains(t.id)).toList();
-      _themes.addAll(newOnlineThemes);
+      _onlineThemes = await _themeService.fetchAvailableThemes();
     } catch (e) {
       debugPrint('获取在线主题失败: $e');
     }
     
-    debugPrint('总主题数量: ${_themes.length}');
+    // 构建完整主题列表
+    _allThemes = [];
+    
+    // 添加内置和已安装的主题
+    for (var theme in installedThemes) {
+      _allThemes.add(theme);
+    }
+    
+    // 添加在线主题（标记是否已安装）
+    for (var onlineTheme in _onlineThemes) {
+      if (installedIds.contains(onlineTheme.id)) {
+        // 已安装的主题，更新状态
+        final index = _allThemes.indexWhere((t) => t.id == onlineTheme.id);
+        if (index != -1) {
+          _allThemes[index] = _allThemes[index].copyWith(isInstalled: true);
+        }
+      } else {
+        // 未安装的在线主题
+        _allThemes.add(onlineTheme);
+      }
+    }
+    
     setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('主题商店'),
@@ -85,20 +96,15 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 分类标签
                 _buildCategoryTabs(),
-                
-                // 主题列表
-                Expanded(
-                  child: _buildThemeList(),
-                ),
+                Expanded(child: _buildThemeList()),
               ],
             ),
     );
   }
 
   Widget _buildCategoryTabs() {
-    final categories = ['全部', '内置', '已安装', '在线'];
+    final categories = ['全部', '内置', '商店', '已下载'];
     
     return SizedBox(
       height: 50,
@@ -125,6 +131,19 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     );
   }
 
+  List<ThemePackage> _getFilteredThemes() {
+    switch (_selectedCategory) {
+      case '内置':
+        return _allThemes.where((t) => t.isBuiltIn).toList();
+      case '商店':
+        return _allThemes.where((t) => !t.isBuiltIn).toList(); // 显示所有商店主题
+      case '已下载':
+        return _allThemes.where((t) => t.isInstalled && !t.isBuiltIn).toList();
+      default: // 全部 - 只显示可用主题（内置+已安装）
+        return _allThemes.where((t) => t.isBuiltIn || t.isInstalled).toList();
+    }
+  }
+
   Widget _buildThemeList() {
     final filteredThemes = _getFilteredThemes();
     
@@ -133,18 +152,9 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.palette_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
-            ),
+            Icon(Icons.palette_outlined, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5)),
             const SizedBox(height: 16),
-            Text(
-              '暂无主题',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
+            Text('暂无主题', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -153,52 +163,31 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: filteredThemes.length,
-      itemBuilder: (context, index) {
-        final theme = filteredThemes[index];
-        return _buildThemeCard(theme);
-      },
+      itemBuilder: (context, index) => _buildThemeCard(filteredThemes[index]),
     );
-  }
-
-  List<ThemePackage> _getFilteredThemes() {
-    switch (_selectedCategory) {
-      case '内置':
-        return _themes.where((t) => t.isBuiltIn).toList();
-      case '已安装':
-        return _themes.where((t) => t.isInstalled && !t.isBuiltIn).toList();
-      case '在线':
-        return _themes.where((t) => !t.isInstalled && !t.isBuiltIn).toList();
-      default:
-        return _themes;
-    }
   }
 
   Widget _buildThemeCard(ThemePackage theme) {
     final isSelected = widget.currentThemeId == theme.id;
     final colorScheme = Theme.of(context).colorScheme;
+    final isInstalled = theme.isInstalled || theme.isBuiltIn;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: isSelected
-            ? BorderSide(color: colorScheme.primary, width: 2)
-            : BorderSide.none,
+        side: isSelected ? BorderSide(color: colorScheme.primary, width: 2) : BorderSide.none,
       ),
       child: InkWell(
-        onTap: () => _selectTheme(theme),
+        onTap: isInstalled ? () => _selectTheme(theme) : null,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 主题预览
               _buildThemePreview(theme),
-              
               const SizedBox(height: 12),
-              
-              // 主题信息
               Row(
                 children: [
                   Expanded(
@@ -207,51 +196,31 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              theme.name,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            if (theme.isBuiltIn) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '内置',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            Text(theme.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            // 标签
+                            if (theme.isBuiltIn)
+                              _buildTag('内置', colorScheme.primaryContainer, colorScheme.onPrimaryContainer)
+                            else if (theme.isInstalled)
+                              _buildTag('已下载', Colors.green.shade100, Colors.green.shade900)
+                            else
+                              _buildTag('商店', Colors.blue.shade100, Colors.blue.shade900),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          theme.description,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                        ),
+                        Text(theme.description, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
+                  // 操作按钮
                   if (isSelected)
-                    Icon(
-                      Icons.check_circle,
-                      color: colorScheme.primary,
-                      size: 28,
-                    )
-                  else if (!theme.isInstalled && !theme.isBuiltIn)
-                    FilledButton(
-                      onPressed: () => _downloadTheme(theme),
-                      child: const Text('下载'),
+                    Icon(Icons.check_circle, color: colorScheme.primary, size: 28)
+                  else if (!isInstalled)
+                    FilledButton(onPressed: () => _downloadTheme(theme), child: const Text('下载'))
+                  else if (theme.isInstalled && !theme.isBuiltIn)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _uninstallTheme(theme),
                     ),
                 ],
               ),
@@ -262,9 +231,19 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     );
   }
 
+  Widget _buildTag(String text, Color bgColor, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text, style: TextStyle(fontSize: 10, color: textColor)),
+    );
+  }
+
   Widget _buildThemePreview(ThemePackage theme) {
     final colors = theme.colors;
-    
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -276,56 +255,6 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
           ],
         ),
       ),
-      child: Stack(
-        children: [
-          // 模拟 AppBar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Color(int.parse(colors.primary.replaceAll('#', '0xFF'))),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // 模拟内容卡片
-          Positioned(
-            bottom: 8,
-            left: 12,
-            right: 12,
-            child: Container(
-              height: 32,
-              decoration: BoxDecoration(
-                color: Color(int.parse(colors.surface.replaceAll('#', '0xFF'))),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -335,27 +264,12 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
   }
 
   Future<void> _downloadTheme(ThemePackage theme) async {
-    // 检查网络权限（如果已有则不弹窗）
-    final hasPermission = await _permissionService.requestNetworkPermission(context);
-    if (!hasPermission) {
-      if (mounted) {
-        _permissionService.showPermissionDeniedSnackBar(context, '网络');
-      }
-      return;
-    }
-
     if (mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('正在下载主题...'),
-            ],
-          ),
+          content: Row(children: [CircularProgressIndicator(), SizedBox(width: 16), Text('正在下载主题...')]),
         ),
       );
     }
@@ -363,17 +277,42 @@ class _ThemeStoreScreenState extends State<ThemeStoreScreen> {
     final success = await _themeService.installTheme(theme);
     
     if (mounted) {
-      Navigator.pop(context); // 关闭加载对话框
-      
+      Navigator.pop(context);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${theme.name} 安装成功')),
-        );
-        _loadThemes(); // 刷新列表
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${theme.name} 安装成功')));
+        _loadThemes();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${theme.name} 安装失败')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${theme.name} 安装失败')));
+      }
+    }
+  }
+
+  Future<void> _uninstallTheme(ThemePackage theme) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('卸载主题'),
+        content: Text('确定要卸载 ${theme.name} 吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('卸载'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await _themeService.uninstallTheme(theme.id);
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${theme.name} 已卸载')));
+          _loadThemes();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('卸载失败')));
+        }
       }
     }
   }
