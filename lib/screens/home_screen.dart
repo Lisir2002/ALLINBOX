@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/theme_model.dart';
+import '../services/app_service.dart';
 import 'placeholder_screen.dart';
 import 'settings_screen.dart';
+import 'app_builder/app_manager_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ThemePackage currentTheme;
@@ -22,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late Animation<double> _fadeAnimation;
 
   static final List<_MenuItem> _menuItems = [
-    _MenuItem(icon: Icons.apps_outlined, activeIcon: Icons.apps, title: '待开发 1', color: Colors.blue),
+    _MenuItem(icon: Icons.apps_outlined, activeIcon: Icons.apps, title: 'APP生成', color: Colors.blue, isMain: true),
     _MenuItem(icon: Icons.extension_outlined, activeIcon: Icons.extension, title: '待开发 2', color: Colors.green),
     _MenuItem(icon: Icons.build_outlined, activeIcon: Icons.build, title: '待开发 3', color: Colors.orange),
     _MenuItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, title: '待开发 4', color: Colors.purple),
@@ -191,12 +193,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PlaceholderScreen(title: item.title, icon: item.activeIcon, color: item.color),
-              ),
-            );
+            if (item.isMain) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AppManagerScreen()),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PlaceholderScreen(title: item.title, icon: item.activeIcon, color: item.color),
+                ),
+              );
+            }
           },
           child: Container(
             decoration: BoxDecoration(
@@ -245,11 +254,13 @@ class _MenuItem {
   final IconData activeIcon;
   final String title;
   final Color color;
+  final bool isMain;
 
   const _MenuItem({
     required this.icon,
     required this.activeIcon,
     required this.title,
     required this.color,
+    this.isMain = false,
   });
 }

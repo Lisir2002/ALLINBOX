@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models/theme_model.dart';
 import 'services/theme_service.dart';
+import 'services/app_service.dart';
 import 'screens/home_screen.dart';
 
 class MyApp extends StatefulWidget {
@@ -23,6 +24,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _initThemeService() async {
     await _themeService.init();
+    await AppService().init();
     setState(() {
       _currentTheme = _themeService.getCurrentTheme();
       _isInitialized = true;
