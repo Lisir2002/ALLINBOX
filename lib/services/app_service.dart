@@ -131,7 +131,7 @@ class AppService {
   }
 
   /// 创建项目文件结构
-  Future<String> createProjectFiles(CustomApp app) async {
+  Future<Directory> createProjectFiles(CustomApp app) async {
     final outputDir = await _getBuildOutputDir(app.id);
     if (await outputDir.exists()) {
       await outputDir.delete(recursive: true);
@@ -147,7 +147,7 @@ class AppService {
     // 创建 AndroidManifest.xml 模板
     await _writeAndroidManifest(outputDir, app);
 
-    return outputDir.path;
+    return outputDir;
   }
 
   /// 写入 pubspec.yaml

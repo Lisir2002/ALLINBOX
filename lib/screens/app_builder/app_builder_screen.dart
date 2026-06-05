@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/app_model.dart';
 import '../../services/app_service.dart';
+import '../app_runner/app_runner_screen.dart';
 
 /// APP 创建/编辑页面
 class AppBuilderScreen extends StatefulWidget {
@@ -137,6 +138,28 @@ class _AppBuilderScreenState extends State<AppBuilderScreen> {
         title: Text(isEditing ? '编辑应用' : '创建应用'),
         centerTitle: true,
         actions: [
+          // 预览按钮
+          TextButton.icon(
+            onPressed: () {
+              if (_urlCtrl.text.trim().startsWith('http')) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AppRunnerScreen(
+                      title: _nameCtrl.text.isEmpty ? '预览' : _nameCtrl.text,
+                      url: _urlCtrl.text.trim(),
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('请输入有效的 URL')),
+                );
+              }
+            },
+            icon: const Icon(Icons.visibility, size: 18),
+            label: const Text('预览'),
+          ),
           TextButton(onPressed: _save, child: const Text('保存')),
         ],
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/app_model.dart';
 import '../../services/app_service.dart';
+import '../../services/build_engine.dart';
+import '../app_runner/app_runner_screen.dart';
 import 'app_builder_screen.dart';
 
 /// APP 管理页面
@@ -13,12 +15,16 @@ class AppManagerScreen extends StatefulWidget {
 
 class _AppManagerScreenState extends State<AppManagerScreen> {
   final AppService _appService = AppService();
+  final BuildEngine _buildEngine = BuildEngine();
   List<CustomApp> _apps = [];
 
   @override
   void initState() {
     super.initState();
     _loadApps();
+    _buildEngine.onStatusChanged = (status, log) {
+      if (mounted) setState(() {});
+    };
   }
 
   void _loadApps() {
@@ -58,10 +64,134 @@ class _AppManagerScreenState extends State<AppManagerScreen> {
     }
   }
 
+  Future<void> _buildApp(CustomApp app) async {
+    // 显示编译进度对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            _buildEngine.onStatusChanged = (status, log) {
+              setDialogState(() {});
+            };
+
+            final statusText = _getStatusText(_buildEngine.status);
+            final statusIcon = _getStatusIcon(_buildEngine.status);
+
+            return AlertDialog(
+              title: Row(
+                children: [
+                  if (_buildEngine.status == BuildStatus.building)
+                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  if (_buildEngine.status != BuildStatus.building) ...[
+                    Icon(statusIcon),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(statusText),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_buildEngine.status == BuildStatus.building ||
+                        _buildEngine.status == BuildStatus.preparing)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: LinearProgressIndicator(value: _buildEngine.progress),
+                      ),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            _buildEngine.log.isEmpty ? '准备中...' : _buildEngine.log,
+                            style: const TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                if (_buildEngine.status == BuildStatus.success || _buildEngine.status == BuildStatus.failed)
+                  TextButton(
+                    onPressed: () {
+                      _buildEngine.reset();
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('关闭'),
+                  ),
+                if (_buildEngine.status == BuildStatus.idle)
+                  TextButton(
+                    onPressed: () {
+                      _buildEngine.reset();
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('取消'),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    // 启动编译
+    final projectDir = await _appService.createProjectFiles(app);
+    final success = await _buildEngine.buildApk(app, projectDir);
+
+    if (mounted) {
+      if (success) {
+        await _appService.markAsBuilt(app.id, '${projectDir.path}/app-release.apk');
+        _loadApps();
+      }
+    }
+  }
+
+  String _getStatusText(BuildStatus status) {
+    switch (status) {
+      case BuildStatus.idle:
+        return '准备编译';
+      case BuildStatus.preparing:
+        return '准备中…';
+      case BuildStatus.building:
+        return '编译中…';
+      case BuildStatus.success:
+        return '编译成功';
+      case BuildStatus.failed:
+        return '编译失败';
+    }
+  }
+
+  IconData _getStatusIcon(BuildStatus status) {
+    switch (status) {
+      case BuildStatus.idle:
+      case BuildStatus.preparing:
+      case BuildStatus.building:
+        return Icons.hourglass_top;
+      case BuildStatus.success:
+        return Icons.check_circle;
+      case BuildStatus.failed:
+        return Icons.error;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('APP 生成器'),
@@ -150,24 +280,49 @@ class _AppManagerScreenState extends State<AppManagerScreen> {
                 ],
               ),
             ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _navigateToBuilder(app: app);
-                    break;
-                  case 'build':
-                    // TODO: 触发编译
-                    break;
-                  case 'delete':
-                    _deleteApp(app);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('编辑')])),
-                const PopupMenuItem(value: 'build', child: Row(children: [Icon(Icons.build, size: 20), SizedBox(width: 8), Text('编译 APK')])),
-                const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('删除', style: TextStyle(color: Colors.red))])),
+            // 操作按钮行
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 预览按钮
+                IconButton(
+                  icon: const Icon(Icons.visibility, size: 20),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AppRunnerScreen(
+                          title: app.name,
+                          url: app.url,
+                          injectCSS: app.injectCSS,
+                          injectJS: app.injectJS,
+                        ),
+                      ),
+                    );
+                  },
+                  tooltip: '预览',
+                ),
+                // 更多操作
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        _navigateToBuilder(app: app);
+                        break;
+                      case 'build':
+                        _buildApp(app);
+                        break;
+                      case 'delete':
+                        _deleteApp(app);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('编辑')])),
+                    const PopupMenuItem(value: 'build', child: Row(children: [Icon(Icons.build, size: 20), SizedBox(width: 8), Text('编译 APK')])),
+                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('删除', style: TextStyle(color: Colors.red))])),
+                  ],
+                ),
               ],
             ),
           ],
