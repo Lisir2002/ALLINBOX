@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'placeholder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,6 +10,50 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  // 功能模块定义
+  static const List<_MenuItem> _menuItems = [
+    _MenuItem(
+      icon: Icons.apps_outlined,
+      title: '待开发 1',
+      color: Colors.blue,
+    ),
+    _MenuItem(
+      icon: Icons.extension_outlined,
+      title: '待开发 2',
+      color: Colors.green,
+    ),
+    _MenuItem(
+      icon: Icons.build_outlined,
+      title: '待开发 3',
+      color: Colors.orange,
+    ),
+    _MenuItem(
+      icon: Icons.dashboard_outlined,
+      title: '待开发 4',
+      color: Colors.purple,
+    ),
+    _MenuItem(
+      icon: Icons.auto_awesome_outlined,
+      title: '待开发 5',
+      color: Colors.pink,
+    ),
+    _MenuItem(
+      icon: Icons.bolt_outlined,
+      title: '待开发 6',
+      color: Colors.teal,
+    ),
+    _MenuItem(
+      icon: Icons.category_outlined,
+      title: '待开发 7',
+      color: Colors.indigo,
+    ),
+    _MenuItem(
+      icon: Icons.layers_outlined,
+      title: '待开发 8',
+      color: Colors.brown,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +100,15 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
                 onPressed: () {
-                  // TODO: 打开设置页面
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PlaceholderScreen(
+                        title: '设置',
+                        icon: Icons.settings_outlined,
+                      ),
+                    ),
+                  );
                 },
               ),
             ],
@@ -96,72 +149,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
               ),
-              delegate: SliverChildListDelegate([
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.calculate_outlined,
-                  title: '计算器',
-                  subtitle: '基础计算工具',
-                  color: Colors.blue,
-                  onTap: () => _showComingSoon(context, '计算器'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.note_alt_outlined,
-                  title: '记事本',
-                  subtitle: '记录重要内容',
-                  color: Colors.green,
-                  onTap: () => _showComingSoon(context, '记事本'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.timer_outlined,
-                  title: '计时器',
-                  subtitle: '倒计时与秒表',
-                  color: Colors.orange,
-                  onTap: () => _showComingSoon(context, '计时器'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.qr_code_scanner_outlined,
-                  title: '二维码',
-                  subtitle: '生成与扫描',
-                  color: Colors.purple,
-                  onTap: () => _showComingSoon(context, '二维码'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.color_lens_outlined,
-                  title: '取色器',
-                  subtitle: '颜色选择工具',
-                  color: Colors.pink,
-                  onTap: () => _showComingSoon(context, '取色器'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.calendar_today_outlined,
-                  title: '日历',
-                  subtitle: '日程管理',
-                  color: Colors.teal,
-                  onTap: () => _showComingSoon(context, '日历'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.translate_outlined,
-                  title: '翻译',
-                  subtitle: '多语言翻译',
-                  color: Colors.indigo,
-                  onTap: () => _showComingSoon(context, '翻译'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.file_copy_outlined,
-                  title: '文件管理',
-                  subtitle: '浏览与管理文件',
-                  color: Colors.brown,
-                  onTap: () => _showComingSoon(context, '文件管理'),
-                ),
-              ]),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _menuItems[index];
+                  return _buildFeatureCard(
+                    context,
+                    icon: item.icon,
+                    title: item.title,
+                    color: item.color,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlaceholderScreen(
+                            title: item.title,
+                            icon: item.icon,
+                            color: item.color,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                childCount: _menuItems.length,
+              ),
             ),
           ),
 
@@ -176,7 +187,27 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
+          if (index != 0) {
+            // 首页以外的导航项，跳转到占位页面
+            final titles = ['首页', '发现', '收藏', '我的'];
+            final icons = [
+              Icons.home_outlined,
+              Icons.explore_outlined,
+              Icons.favorite_outline,
+              Icons.person_outline,
+            ];
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlaceholderScreen(
+                  title: titles[index],
+                  icon: icons[index],
+                ),
+              ),
+            );
+          } else {
+            setState(() => _selectedIndex = index);
+          }
         },
         destinations: const [
           NavigationDestination(
@@ -209,7 +240,6 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context, {
     required IconData icon,
     required String title,
-    required String subtitle,
     required Color color,
     required VoidCallback onTap,
   }) {
@@ -244,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: color,
                 ),
               ),
-              const SizedBox(height: 12),
+              const Spacer(),
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -253,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                subtitle,
+                '点击进入',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -264,21 +294,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  // 功能即将推出提示
-  void _showComingSoon(BuildContext context, String featureName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(featureName),
-        content: const Text('该功能正在开发中，敬请期待！'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-  }
+// 菜单项数据模型
+class _MenuItem {
+  final IconData icon;
+  final String title;
+  final Color color;
+
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    required this.color,
+  });
 }
